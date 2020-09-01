@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -28,10 +29,11 @@ import com.github.barteksc.pdfviewer.util.PermissionUtils;
 
 import java.io.InputStream;
 
-
+@SuppressWarnings("unused")
 public class PdfRenderActivity extends AppCompatActivity implements OnPageChangeListener, OnLoadCompleteListener {
 
     private PDFView pdfView;
+    private ProgressBar progressBar;
     private OnLoadCompleteListener onLoadCompleteListener;
     private OnPageChangeListener onPageChangeListener;
     private ProgressDialog mProgressDialog;
@@ -53,6 +55,7 @@ public class PdfRenderActivity extends AppCompatActivity implements OnPageChange
         setContentView(R.layout.activity_pdf_render);
 
         pdfView = findViewById(R.id.pdfView);
+        progressBar = findViewById(R.id.progressBar);
 
         onLoadCompleteListener = this;
         onPageChangeListener = this;
@@ -87,7 +90,7 @@ public class PdfRenderActivity extends AppCompatActivity implements OnPageChange
     }
 
     private void loadFromStream() {
-        pdfView.loadFromStreamUrl(this.pdfUrl   , new OnCompleteStreamListener() {
+        pdfView.loadFromStreamUrl(this.pdfUrl, new OnCompleteStreamListener() {
             @Override
             public void onComplete(InputStream inputStream) {
                 pdfView.fromStream(inputStream)
@@ -138,11 +141,14 @@ public class PdfRenderActivity extends AppCompatActivity implements OnPageChange
         Toast.makeText(this, "Opening PDF", Toast.LENGTH_SHORT).show();
         pdfView.fromBytes(decrypt(fileName))
                 .enableSwipe(true) // allows to block changing pages using swipe
-                .defaultPage(0)
-                .enableScreenShot(false, this)
-                .swipeHorizontal(true)
-                .onPageChange(onPageChangeListener)
-                .onLoad(onLoadCompleteListener)
+                .defaultPage(0) // set to deafult page of the pdf
+                .enableScreenShot(false, this) // let user take the screenshot
+                .swipeHorizontal(true) // swipe vertically/horizontally
+                .onPageChange(onPageChangeListener) // let user know the page number when changed
+                .onLoad(onLoadCompleteListener) // called when the pdf is loaded
+                .pageFling(true) // Swipe like ViewPager
+                .fitEachPage(true) // Fit Each Page
+                .enableAntialiasing(true)
                 .load();
 
     }
@@ -190,6 +196,8 @@ public class PdfRenderActivity extends AppCompatActivity implements OnPageChange
     @Override
     public void onPageChanged(int page, int pageCount) {
         Log.i("TAG", "onPageChanged: " + page + " , " + pageCount);
+        progressBar.setProgress(page + 1);
+        progressBar.setMax(pageCount);
     }
 
     @Override
